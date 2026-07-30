@@ -166,21 +166,19 @@ export class SWRCache {
   }
 
   /**
-   * Invalidate a cached entry and its in-flight fetch (if any).
-   * After invalidation the next {@link SWRCache.get | get} for this key will
-   * trigger a fresh upstream fetch.
+   * Invalidate a single cache entry by key. Removes the entry from the cache
+   * and cleans up any in-flight fetch for that key.
    *
    * @param key - The cache key to invalidate.
+   * @returns `true` if the entry existed and was removed, `false` otherwise.
    */
-  public invalidate(key: string): void {
-    this.cache.delete(key);
+  public invalidate(key: string): boolean {
     this.activeFetches.delete(key);
+    return this.cache.delete(key);
   }
 
   /**
-   * Clear all cached entries and cancel all in-flight fetches.
-   * After clearing, every subsequent {@link SWRCache.get | get} will behave
-   * as a cache miss and trigger a fresh upstream fetch.
+   * Clear all entries from the cache and cancel all in-flight fetches.
    */
   public clear(): void {
     this.cache.clear();

@@ -272,6 +272,262 @@ paths:
         '404':
           $ref: "#/components/responses/NotFoundError"
 
+  /disputes:
+    get:
+      summary: List disputes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, under_review, resolved, escalated, cancelled]
+        - name: contractId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of disputes
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data, requestId]
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    type: object
+                    required: [disputes, total]
+                    properties:
+                      disputes:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Dispute"
+                      total:
+                        type: integer
+                        minimum: 0
+                  requestId:
+                    type: string
+                  correlationId:
+                    type: string
+                  meta:
+                    type: object
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          description: Disputes feature disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limited
+    post:
+      summary: Create a new dispute
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDispute"
+      responses:
+        "201":
+          description: Dispute created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data, requestId]
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    type: object
+                    required: [dispute]
+                    properties:
+                      dispute:
+                        $ref: "#/components/schemas/Dispute"
+                  requestId:
+                    type: string
+                  correlationId:
+                    type: string
+                  meta:
+                    type: object
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          description: Disputes feature disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limited
+
+  /disputes/{id}:
+    get:
+      summary: Get a single dispute by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dispute found
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data, requestId]
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    $ref: "#/components/schemas/Dispute"
+                  requestId:
+                    type: string
+                  correlationId:
+                    type: string
+                  meta:
+                    type: object
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "429":
+          description: Rate limited
+    patch:
+      summary: Update an existing dispute
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDispute"
+      responses:
+        "200":
+          description: Dispute updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data, requestId]
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    type: object
+                    required: [dispute]
+                    properties:
+                      dispute:
+                        $ref: "#/components/schemas/Dispute"
+                  requestId:
+                    type: string
+                  correlationId:
+                    type: string
+                  meta:
+                    type: object
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "429":
+          description: Rate limited
+    delete:
+      summary: Delete a dispute (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dispute deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data, requestId]
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    type: object
+                    required: [message]
+                    properties:
+                      message:
+                        type: string
+                  requestId:
+                    type: string
+                  correlationId:
+                    type: string
+                  meta:
+                    type: object
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "429":
+          description: Rate limited
+
   /reputation/{id}:
     get:
       summary: Get freelancer reputation
@@ -601,6 +857,80 @@ components:
               type: string
             requestId:
               type: string
+
+    DisputeStatus:
+      type: string
+      enum: [open, under_review, resolved, escalated, cancelled]
+
+    Dispute:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+        status:
+          $ref: "#/components/schemas/DisputeStatus"
+        contractId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        raisedBy:
+          type: string
+          format: uuid
+        resolution:
+          type: string
+        resolvedBy:
+          type: string
+          format: uuid
+        clientRefundAmount:
+          type: number
+          minimum: 0
+        freelancerReleaseAmount:
+          type: number
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateDispute:
+      type: object
+      required: [contractId, reason]
+      properties:
+        contractId:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          example: Deliverable not met
+        raisedBy:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174001
+
+    UpdateDispute:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          $ref: "#/components/schemas/DisputeStatus"
+        resolution:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        resolvedBy:
+          type: string
+          format: uuid
     Contract:
       type: object
       properties:
